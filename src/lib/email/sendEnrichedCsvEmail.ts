@@ -1,4 +1,4 @@
-import { Resend } from "resend";
+import nodemailer from "nodemailer";
 
 import { getEnv } from "@/config/env";
 
@@ -8,23 +8,27 @@ export async function sendEnrichedCsvEmail(params: {
   filename?: string;
 }): Promise<void> {
   const env = getEnv();
-  if (!env.RESEND_API_KEY || !env.EMAIL_FROM) {
-    throw new Error("Missing required email env vars: RESEND_API_KEY and EMAIL_FROM");
+  if (!env.EMAIL_FROM || !env.SMTP_USER || !env.SMTP_PASS) {
+    throw new Error(
+      "Missing required SMTP env vars: EMAIL_FROM, SMTP_USER, and SMTP_PASS"
+    );
   }
-
-  const resend = new Resend(env.RESEND_API_KEY);
   const filename = params.filename ?? "enriched-companies.csv";
+  const transporter = nodemailer.createTransport({
+    host: env.SMTP_HOST,
+    port: env.SMTP_PORT,
+    secure: env.SMTP_SECURE,
+    auth: {
+      user: env.SMTP_USER,
+      pass: env.SMTP_PASS
+    }
+  });
 
-  await resend.emails.send({
+  await transporter.sendMail({
     from: env.EMAIL_FROM,
     to: params.to,
     subject: "Your enriched company CSV is ready",
     text: "Attached is your enriched CSV.",
-    attachments: [
-      {
-        filename,
-        content: Buffer.from(params.csvContent).toString("base64")
-      }
-    ]
+    attachments: [{ filename, content: params.csvContent }]
   });
 }

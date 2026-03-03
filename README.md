@@ -10,7 +10,7 @@ Minimal skeleton for the take-home assignment workflow:
 - Next.js (App Router) + TypeScript
 - `csv-parse` + `csv-stringify`
 - `zod` validation
-- `resend` for email delivery
+- `nodemailer` + Gmail SMTP for email delivery
 
 ## Quick Start
 1. Install dependencies:
@@ -24,8 +24,12 @@ Minimal skeleton for the take-home assignment workflow:
 3. Set required values in `.env.local`:
    - `OPENAI_API_KEY`
    - `OPENAI_MODEL` (optional override, default `gpt-4.1-mini`)
-   - `RESEND_API_KEY`
    - `EMAIL_FROM`
+   - `SMTP_HOST` (default `smtp.gmail.com`)
+   - `SMTP_PORT` (default `465`)
+   - `SMTP_SECURE` (`true` for Gmail 465)
+   - `SMTP_USER` (your Gmail address)
+   - `SMTP_PASS` (Gmail App Password)
    - `NEWS_API_KEY`
    - `SERPAPI_API_KEY`
    - `JINA_API_KEY` (optional)
