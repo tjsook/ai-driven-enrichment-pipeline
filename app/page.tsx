@@ -1,16 +1,30 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 
 export default function Home() {
   const [status, setStatus] = useState<string>("");
   const [loading, setLoading] = useState(false);
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
+
+  useEffect(() => {
+    if (!loading) {
+      return;
+    }
+
+    const interval = setInterval(() => {
+      setElapsedSeconds((current) => current + 1);
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [loading]);
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = event.currentTarget;
     const formData = new FormData(form);
 
+    setElapsedSeconds(0);
     setLoading(true);
     setStatus("Loading...");
 
@@ -60,7 +74,7 @@ export default function Home() {
           </label>
 
           <button type="submit" disabled={loading}>
-            {loading ? "Loading..." : "Submit"}
+            {loading ? `Loading... ${elapsedSeconds}s` : "Submit"}
           </button>
         </form>
 
