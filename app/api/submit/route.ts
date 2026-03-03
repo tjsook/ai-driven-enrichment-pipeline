@@ -4,55 +4,8 @@ import { buildEnrichedCsv } from "@/lib/csv/buildEnrichedCsv";
 import { parseCsvToInputs } from "@/lib/csv/parseCsv";
 import { sendEnrichedCsvEmail } from "@/lib/email/sendEnrichedCsvEmail";
 import { enrichBatch } from "@/lib/enrichment/enrichBatch";
-import { completeJob, createJob, failJob, updateJob } from "@/lib/jobs/store";
 import { submitSchema } from "@/lib/validation/submitSchema";
 import type { SubmitError, SubmitSuccess } from "@/types/api";
-
-async function runJob(params: {
-  jobId: string;
-  email: string;
-  rawCsv: string;
-  filename: string;
-}): Promise<void> {
-  const { jobId, email, rawCsv, filename } = params;
-
-  try {
-    updateJob(jobId, "parsing_csv", 10, "Parsing CSV...");
-    const inputs = parseCsvToInputs(rawCsv);
-
-    if (inputs.length === 0) {
-      throw new Error("CSV has no data rows.");
-    }
-
-    updateJob(jobId, "enriching_companies", 20, `Enriching 0/${inputs.length} companies...`);
-    const enrichedRows = await enrichBatch(inputs, {
-      onProgress: (completed, total) => {
-        const progress = Math.min(85, 20 + Math.floor((completed / total) * 60));
-        updateJob(
-          jobId,
-          "enriching_companies",
-          progress,
-          `Enriching ${completed}/${total} companies...`
-        );
-      }
-    });
-
-    updateJob(jobId, "generating_csv", 90, "Generating enriched CSV...");
-    const enrichedCsv = buildEnrichedCsv(enrichedRows);
-
-    updateJob(jobId, "sending_email", 95, "Sending email...");
-    await sendEnrichedCsvEmail({
-      to: email,
-      csvContent: enrichedCsv,
-      filename: `enriched-${filename}`
-    });
-
-    completeJob(jobId, "Done. Enriched CSV emailed successfully.");
-  } catch (error) {
-    const message = error instanceof Error ? error.message : "Unexpected job error";
-    failJob(jobId, message);
-  }
-}
 
 export async function POST(request: Request): Promise<NextResponse<SubmitSuccess | SubmitError>> {
   try {
@@ -70,18 +23,24 @@ export async function POST(request: Request): Promise<NextResponse<SubmitSuccess
     });
 
     const rawCsv = await file.text();
-    const job = createJob("Job queued.");
+    const inputs = parseCsvToInputs(rawCsv);
 
-    void runJob({
-      jobId: job.id,
-      email,
-      rawCsv,
-      filename: file.name
+    if (inputs.length === 0) {
+      return NextResponse.json({ error: "CSV has no data rows." }, { status: 400 });
+    }
+
+    const enrichedRows = await enrichBatch(inputs);
+    const enrichedCsv = buildEnrichedCsv(enrichedRows);
+
+    await sendEnrichedCsvEmail({
+      to: email,
+      csvContent: enrichedCsv,
+      filename: `enriched-${file.name}`
     });
 
     return NextResponse.json({
-      message: "Submission received. Processing has started.",
-      jobId: job.id
+      message: "Submitted successfully. Check your email shortly.",
+      rowsProcessed: inputs.length
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unexpected error";
