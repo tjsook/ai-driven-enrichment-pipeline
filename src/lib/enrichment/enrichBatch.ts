@@ -22,5 +22,5 @@ async function mapWithConcurrency<TInput, TOutput>(
 }
 
 export async function enrichBatch(inputs: CompanyInput[]): Promise<PipelineResult[]> {
-  return mapWithConcurrency(inputs, 4, enrichCompany);
+  return mapWithConcurrency(inputs, 1, enrichCompany);
 }

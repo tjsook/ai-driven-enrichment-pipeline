@@ -1,7 +1,7 @@
-import OpenAI from "openai";
 import { z } from "zod";
 
 import { getEnv } from "@/config/env";
+import { runOpenAiCall } from "@/lib/ai/openaiClient";
 
 const profileSchema = z.object({
   industry: z.string().min(1),
@@ -29,36 +29,30 @@ export async function runProfileExtraction(context: {
   companySignals: string;
 }): Promise<ProfileExtraction> {
   const env = getEnv();
-  if (!env.OPENAI_API_KEY) {
-    throw new Error("Missing OPENAI_API_KEY");
-  }
-
-  const client = new OpenAI({
-    apiKey: env.OPENAI_API_KEY
-  });
-
-  const completion = await client.chat.completions.create({
-    model: env.OPENAI_MODEL,
-    temperature: 0.2,
-    response_format: { type: "json_object" },
-    messages: [
-      {
-        role: "system",
-        content:
-          "You are a B2B sales research analyst. Return only valid JSON with fields: industry, subIndustry, primaryProductService, targetCustomerIcp, estimatedCompanySize, keyOfferingSummary. Keep each field concise and factual."
-      },
-      {
-        role: "user",
-        content: [
-          `Company: ${context.companyName}`,
-          "Website context:",
-          context.websiteContext,
-          "External company signals:",
-          context.companySignals
-        ].join("\n\n")
-      }
-    ]
-  });
+  const completion = await runOpenAiCall((client) =>
+    client.chat.completions.create({
+      model: env.OPENAI_MODEL,
+      temperature: 0.2,
+      response_format: { type: "json_object" },
+      messages: [
+        {
+          role: "system",
+          content:
+            "You are a B2B sales research analyst. Return only valid JSON with fields: industry, subIndustry, primaryProductService, targetCustomerIcp, estimatedCompanySize, keyOfferingSummary. Keep each field concise and factual."
+        },
+        {
+          role: "user",
+          content: [
+            `Company: ${context.companyName}`,
+            "Website context:",
+            context.websiteContext,
+            "External company signals:",
+            context.companySignals
+          ].join("\n\n")
+        }
+      ]
+    })
+  );
 
   const content = completion.choices[0]?.message?.content;
   if (!content) {

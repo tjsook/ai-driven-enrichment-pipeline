@@ -1,7 +1,7 @@
-import OpenAI from "openai";
 import { z } from "zod";
 
 import { getEnv } from "@/config/env";
+import { runOpenAiCall } from "@/lib/ai/openaiClient";
 import type { ProfileExtraction } from "@/lib/ai/runProfileExtraction";
 
 const insightSchema = z.object({
@@ -32,37 +32,31 @@ export async function runInsightGeneration(context: {
   websiteContext: string;
 }): Promise<InsightGeneration> {
   const env = getEnv();
-  if (!env.OPENAI_API_KEY) {
-    throw new Error("Missing OPENAI_API_KEY");
-  }
-
-  const client = new OpenAI({
-    apiKey: env.OPENAI_API_KEY
-  });
-
-  const completion = await client.chat.completions.create({
-    model: env.OPENAI_MODEL,
-    temperature: 0.4,
-    response_format: { type: "json_object" },
-    messages: [
-      {
-        role: "system",
-        content:
-          "You are a B2B outbound strategist. Return only valid JSON with fields: salesAngles (3 strings), riskSignals (3 strings), recentNewsSummary (string). Angles must be actionable and different. Risk signals should be realistic buying risks or account risks."
-      },
-      {
-        role: "user",
-        content: [
-          `Company: ${context.companyName}`,
-          `Profile: ${JSON.stringify(context.profile)}`,
-          "Recent news signals:",
-          context.newsSignals,
-          "Website context:",
-          context.websiteContext
-        ].join("\n\n")
-      }
-    ]
-  });
+  const completion = await runOpenAiCall((client) =>
+    client.chat.completions.create({
+      model: env.OPENAI_MODEL,
+      temperature: 0.4,
+      response_format: { type: "json_object" },
+      messages: [
+        {
+          role: "system",
+          content:
+            "You are a B2B outbound strategist. Return only valid JSON with fields: salesAngles (3 strings), riskSignals (3 strings), recentNewsSummary (string). Angles must be actionable and different. Risk signals should be realistic buying risks or account risks."
+        },
+        {
+          role: "user",
+          content: [
+            `Company: ${context.companyName}`,
+            `Profile: ${JSON.stringify(context.profile)}`,
+            "Recent news signals:",
+            context.newsSignals,
+            "Website context:",
+            context.websiteContext
+          ].join("\n\n")
+        }
+      ]
+    })
+  );
 
   const content = completion.choices[0]?.message?.content;
   if (!content) {
