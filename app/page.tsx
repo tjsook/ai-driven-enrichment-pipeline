@@ -1,10 +1,34 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
+
+const LOADING_STEPS = [
+  "Parsing CSV",
+  "Validating company rows",
+  "Fetching website context",
+  "Loading external data sources",
+  "Running AI enrichment",
+  "Building enriched CSV",
+  "Sending email"
+] as const;
 
 export default function Home() {
   const [status, setStatus] = useState<string>("");
   const [loading, setLoading] = useState(false);
+  const [loadingStepIndex, setLoadingStepIndex] = useState(0);
+
+  useEffect(() => {
+    if (!loading) {
+      setLoadingStepIndex(0);
+      return;
+    }
+
+    const interval = setInterval(() => {
+      setLoadingStepIndex((current) => (current + 1) % LOADING_STEPS.length);
+    }, 2200);
+
+    return () => clearInterval(interval);
+  }, [loading]);
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -57,6 +81,17 @@ export default function Home() {
             {loading ? "Processing..." : "Submit"}
           </button>
         </form>
+
+        {loading ? (
+          <p className="status loading-status">
+            {LOADING_STEPS[loadingStepIndex]}
+            <span className="dots" aria-hidden="true">
+              <span>.</span>
+              <span>.</span>
+              <span>.</span>
+            </span>
+          </p>
+        ) : null}
 
         {status ? <p className="status">{status}</p> : null}
       </section>
