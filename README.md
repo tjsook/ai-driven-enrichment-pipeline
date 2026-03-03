@@ -30,6 +30,8 @@ Minimal skeleton for the take-home assignment workflow:
    - `SMTP_SECURE` (`true` for Gmail 465)
    - `SMTP_USER` (your Gmail address)
    - `SMTP_PASS` (Gmail App Password)
+   - `OPENAI_RPM` (OpenAI requests-per-minute limit for throttling, default `3`)
+   - `ENRICH_CONCURRENCY` (row processing concurrency, default `1`)
    - `NEWS_API_KEY`
    - `SERPAPI_API_KEY`
    - `JINA_API_KEY` (optional)

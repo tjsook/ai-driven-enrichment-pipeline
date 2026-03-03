@@ -47,6 +47,30 @@ const envSchema = z.object({
   ),
   SMTP_USER: asOptional,
   SMTP_PASS: asOptional,
+  OPENAI_RPM: z.preprocess(
+    (value) => {
+      if (typeof value === "string" && value.trim() === "") {
+        return 3;
+      }
+      if (typeof value === "string") {
+        return Number(value);
+      }
+      return value;
+    },
+    z.number().int().positive().default(3)
+  ),
+  ENRICH_CONCURRENCY: z.preprocess(
+    (value) => {
+      if (typeof value === "string" && value.trim() === "") {
+        return 1;
+      }
+      if (typeof value === "string") {
+        return Number(value);
+      }
+      return value;
+    },
+    z.number().int().positive().default(1)
+  ),
   APP_BASE_URL: z.preprocess(
     (value) => (typeof value === "string" && value.trim() === "" ? undefined : value),
     z.string().url().optional()
@@ -72,6 +96,8 @@ export function getEnv(): z.infer<typeof envSchema> {
     SMTP_SECURE: process.env.SMTP_SECURE,
     SMTP_USER: process.env.SMTP_USER,
     SMTP_PASS: process.env.SMTP_PASS,
+    OPENAI_RPM: process.env.OPENAI_RPM,
+    ENRICH_CONCURRENCY: process.env.ENRICH_CONCURRENCY,
     APP_BASE_URL: process.env.APP_BASE_URL,
     JINA_API_KEY: process.env.JINA_API_KEY,
     NEWS_API_KEY: process.env.NEWS_API_KEY,

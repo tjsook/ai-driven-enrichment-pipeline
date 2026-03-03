@@ -2,7 +2,6 @@ import OpenAI from "openai";
 
 import { getEnv } from "@/config/env";
 
-const MIN_OPENAI_CALL_INTERVAL_MS = 22_000;
 const MAX_RETRIES = 3;
 
 let requestChain: Promise<void> = Promise.resolve();
@@ -28,9 +27,14 @@ function isRetryableRateLimitError(error: unknown): boolean {
 }
 
 async function scheduleOpenAiCall<T>(task: () => Promise<T>): Promise<T> {
+  const env = getEnv();
+  const callsPerMinute = Math.max(1, env.OPENAI_RPM);
+  // 10% safety buffer below theoretical max throughput.
+  const minIntervalMs = Math.ceil((60_000 / callsPerMinute) * 1.1);
+
   const execute = requestChain.then(async () => {
     const now = Date.now();
-    const waitMs = Math.max(0, MIN_OPENAI_CALL_INTERVAL_MS - (now - lastRequestAt));
+    const waitMs = Math.max(0, minIntervalMs - (now - lastRequestAt));
 
     if (waitMs > 0) {
       await sleep(waitMs);
@@ -69,7 +73,7 @@ export async function runOpenAiCall<T>(task: (client: OpenAI) => Promise<T>): Pr
         throw error;
       }
 
-      const backoffMs = attempt * 25_000;
+      const backoffMs = attempt * Math.max(5_000, Math.ceil(60_000 / Math.max(1, env.OPENAI_RPM)));
       await sleep(backoffMs);
     }
   }

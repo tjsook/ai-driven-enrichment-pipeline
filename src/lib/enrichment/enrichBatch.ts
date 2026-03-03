@@ -1,4 +1,5 @@
 import { enrichCompany } from "@/lib/enrichment/enrichCompany";
+import { getEnv } from "@/config/env";
 import type { CompanyInput, PipelineResult } from "@/types/enrichment";
 
 async function mapWithConcurrency<TInput, TOutput>(
@@ -22,5 +23,6 @@ async function mapWithConcurrency<TInput, TOutput>(
 }
 
 export async function enrichBatch(inputs: CompanyInput[]): Promise<PipelineResult[]> {
-  return mapWithConcurrency(inputs, 1, enrichCompany);
+  const env = getEnv();
+  return mapWithConcurrency(inputs, env.ENRICH_CONCURRENCY, enrichCompany);
 }
