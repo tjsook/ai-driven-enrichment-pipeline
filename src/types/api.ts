@@ -1,6 +1,6 @@
 export type SubmitSuccess = {
   message: string;
-  rowsProcessed: number;
+  jobId: string;
 };
 
 export type SubmitError = {
