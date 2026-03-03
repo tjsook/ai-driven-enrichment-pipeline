@@ -1,8 +1,9 @@
-import { env } from "@/config/env";
+import { getEnv } from "@/config/env";
 import { fetchWithTimeout, normalizeWebsiteUrl } from "@/lib/utils/http";
 import type { CompanyInput } from "@/types/enrichment";
 
 export async function fetchWebsiteContext(input: CompanyInput): Promise<string> {
+  const env = getEnv();
   const websiteUrl = normalizeWebsiteUrl(input.website);
   const readerUrl = `https://r.jina.ai/http://${websiteUrl.replace(/^https?:\/\//, "")}`;
 

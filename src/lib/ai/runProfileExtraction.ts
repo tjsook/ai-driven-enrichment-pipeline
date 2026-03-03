@@ -1,11 +1,7 @@
 import OpenAI from "openai";
 import { z } from "zod";
 
-import { env } from "@/config/env";
-
-const client = new OpenAI({
-  apiKey: env.OPENAI_API_KEY
-});
+import { getEnv } from "@/config/env";
 
 const profileSchema = z.object({
   industry: z.string().min(1),
@@ -32,6 +28,15 @@ export async function runProfileExtraction(context: {
   websiteContext: string;
   companySignals: string;
 }): Promise<ProfileExtraction> {
+  const env = getEnv();
+  if (!env.OPENAI_API_KEY) {
+    throw new Error("Missing OPENAI_API_KEY");
+  }
+
+  const client = new OpenAI({
+    apiKey: env.OPENAI_API_KEY
+  });
+
   const completion = await client.chat.completions.create({
     model: env.OPENAI_MODEL,
     temperature: 0.2,

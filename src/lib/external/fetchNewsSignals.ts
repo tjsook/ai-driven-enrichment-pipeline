@@ -1,4 +1,4 @@
-import { env } from "@/config/env";
+import { getEnv } from "@/config/env";
 import { fetchWithTimeout } from "@/lib/utils/http";
 import type { CompanyInput } from "@/types/enrichment";
 
@@ -17,6 +17,11 @@ type NewsApiResponse = {
 };
 
 export async function fetchNewsSignals(input: CompanyInput): Promise<string> {
+  const env = getEnv();
+  if (!env.NEWS_API_KEY) {
+    throw new Error("Missing NEWS_API_KEY");
+  }
+
   const url = new URL("https://newsapi.org/v2/everything");
   url.searchParams.set("q", `"${input.companyName}"`);
   url.searchParams.set("language", "en");

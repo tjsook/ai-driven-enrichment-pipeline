@@ -1,12 +1,8 @@
 import OpenAI from "openai";
 import { z } from "zod";
 
-import { env } from "@/config/env";
+import { getEnv } from "@/config/env";
 import type { ProfileExtraction } from "@/lib/ai/runProfileExtraction";
-
-const client = new OpenAI({
-  apiKey: env.OPENAI_API_KEY
-});
 
 const insightSchema = z.object({
   salesAngles: z.array(z.string().min(1)).length(3),
@@ -35,6 +31,15 @@ export async function runInsightGeneration(context: {
   newsSignals: string;
   websiteContext: string;
 }): Promise<InsightGeneration> {
+  const env = getEnv();
+  if (!env.OPENAI_API_KEY) {
+    throw new Error("Missing OPENAI_API_KEY");
+  }
+
+  const client = new OpenAI({
+    apiKey: env.OPENAI_API_KEY
+  });
+
   const completion = await client.chat.completions.create({
     model: env.OPENAI_MODEL,
     temperature: 0.4,

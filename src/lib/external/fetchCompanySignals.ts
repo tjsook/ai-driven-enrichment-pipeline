@@ -1,4 +1,4 @@
-import { env } from "@/config/env";
+import { getEnv } from "@/config/env";
 import { fetchWithTimeout } from "@/lib/utils/http";
 import type { CompanyInput } from "@/types/enrichment";
 
@@ -19,6 +19,11 @@ type SerpApiResponse = {
 };
 
 export async function fetchCompanySignals(input: CompanyInput): Promise<string> {
+  const env = getEnv();
+  if (!env.SERPAPI_API_KEY) {
+    throw new Error("Missing SERPAPI_API_KEY");
+  }
+
   const url = new URL("https://serpapi.com/search.json");
   url.searchParams.set("engine", "google");
   url.searchParams.set("q", `${input.companyName} company overview`);
