@@ -22,8 +22,13 @@ Minimal skeleton for the take-home assignment workflow:
    cp .env.example .env.local
    ```
 3. Set required values in `.env.local`:
+   - `OPENAI_API_KEY`
+   - `OPENAI_MODEL` (optional override, default `gpt-4.1-mini`)
    - `RESEND_API_KEY`
    - `EMAIL_FROM`
+   - `NEWS_API_KEY`
+   - `SERPAPI_API_KEY`
+   - `JINA_API_KEY` (optional)
 4. Run:
    ```bash
    npm run dev
@@ -38,7 +43,6 @@ This is a scaffold with provider placeholders. The end-to-end wiring is in place
 - Email send: `/src/lib/email/sendEnrichedCsvEmail.ts`
 
 ## Next Implementation Steps
-1. Replace external source stubs under `/src/lib/external`.
-2. Implement real AI calls in `/src/lib/ai` with strict JSON schema outputs.
-3. Add row-level retries and fallback text when provider calls fail.
-4. Add tests for CSV parsing and pipeline mapping.
+1. Add retries/backoff around provider calls for production reliability.
+2. Add tests for CSV parsing and pipeline mapping.
+3. Move processing to a background queue for larger CSVs.
