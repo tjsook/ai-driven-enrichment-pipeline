@@ -1,0 +1,22 @@
+export const REQUIRED_HEADERS = [
+  "Company Name",
+  "Website",
+  "Industry",
+  "Sub-Industry",
+  "Primary Product / Service",
+  "Target Customer (ICP)",
+  "Estimated Company Size",
+  "Recent News Summary",
+  "Key Offering Summary",
+  "Sales Angle 1",
+  "Sales Angle 2",
+  "Sales Angle 3",
+  "Risk Signal 1",
+  "Risk Signal 2",
+  "Risk Signal 3",
+  "Data Sources Used"
+] as const;
+
+export type CsvHeader = (typeof REQUIRED_HEADERS)[number];
+
+export type CsvRow = Record<CsvHeader, string>;
