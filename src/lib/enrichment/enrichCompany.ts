@@ -58,6 +58,12 @@ export async function enrichCompany(input: CompanyInput): Promise<PipelineResult
       websiteContext
     });
 
+    // Preserve retrieved news signals directly so model phrasing does not drop real articles.
+    const resolvedNewsSummary =
+      newsSignals && !newsSignals.startsWith("News signals unavailable")
+        ? newsSignals
+        : insights.recentNewsSummary;
+
     return {
       input,
       enrichment: {
@@ -66,7 +72,7 @@ export async function enrichCompany(input: CompanyInput): Promise<PipelineResult
         primaryProductService: profile.primaryProductService,
         targetCustomerIcp: profile.targetCustomerIcp,
         estimatedCompanySize: profile.estimatedCompanySize,
-        recentNewsSummary: insights.recentNewsSummary,
+        recentNewsSummary: resolvedNewsSummary,
         keyOfferingSummary: profile.keyOfferingSummary,
         salesAngles: insights.salesAngles,
         riskSignals: insights.riskSignals,
