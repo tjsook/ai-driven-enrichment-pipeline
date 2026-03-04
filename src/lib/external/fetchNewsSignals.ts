@@ -26,6 +26,34 @@ type RankedNewsResult = {
 
 const MAX_NEWS_AGE_DAYS = 120;
 const MAX_CANDIDATES = 20;
+const MIN_NEWS_API_INTERVAL_MS = 1200;
+
+let newsApiRequestChain: Promise<void> = Promise.resolve();
+let lastNewsApiRequestAt = 0;
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function scheduleNewsApiRequest<T>(task: () => Promise<T>): Promise<T> {
+  const execute = newsApiRequestChain.then(async () => {
+    const now = Date.now();
+    const waitMs = Math.max(0, MIN_NEWS_API_INTERVAL_MS - (now - lastNewsApiRequestAt));
+    if (waitMs > 0) {
+      await sleep(waitMs);
+    }
+
+    lastNewsApiRequestAt = Date.now();
+    return task();
+  });
+
+  newsApiRequestChain = execute.then(
+    () => undefined,
+    () => undefined
+  );
+
+  return execute;
+}
 
 function safeText(value: string | undefined, fallback = "N/A"): string {
   const text = value?.trim();
@@ -90,19 +118,27 @@ async function fetchNewsApiCandidates(apiKey: string, query: string): Promise<Ne
     .slice(0, 10);
   url.searchParams.set("from", since);
 
-  const response = await fetchWithTimeout(url.toString(), {
-    headers: {
-      "X-Api-Key": apiKey
-    }
-  });
+  const response = await scheduleNewsApiRequest(() =>
+    fetchWithTimeout(url.toString(), {
+      headers: {
+        "X-Api-Key": apiKey
+      }
+    })
+  );
 
   if (!response.ok) {
-    throw new Error(`News API request failed: ${response.status}`);
+    const errorBody = await response.text();
+    const compactBody = errorBody.replace(/\s+/g, " ").slice(0, 220);
+    throw new Error(
+      `News API request failed (${response.status}) for query "${query}": ${compactBody}`
+    );
   }
 
   const data = (await response.json()) as NewsApiResponse;
   if (data.status !== "ok") {
-    throw new Error(data.message ?? "News API returned non-ok status");
+    throw new Error(
+      `News API returned non-ok status for query "${query}": ${data.message ?? "unknown error"}`
+    );
   }
 
   return data.articles ?? [];

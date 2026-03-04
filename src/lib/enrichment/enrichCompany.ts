@@ -33,7 +33,7 @@ async function safe<T>(fn: () => Promise<T>, fallback: T): Promise<T> {
 
 export async function enrichCompany(input: CompanyInput): Promise<PipelineResult> {
   try {
-    const [websiteContext, companySignals, newsSignals] = await Promise.all([
+    const [websiteContext, companySignals] = await Promise.all([
       safe(
         () => fetchWebsiteContext(input),
         `Website extraction unavailable for ${input.companyName}.`
@@ -41,9 +41,17 @@ export async function enrichCompany(input: CompanyInput): Promise<PipelineResult
       safe(
         () => fetchCompanySignals(input),
         `Company search signals unavailable for ${input.companyName}.`
-      ),
-      safe(() => fetchNewsSignals(input), `News signals unavailable for ${input.companyName}.`)
+      )
     ]);
+
+    const newsSignals = await (async () => {
+      try {
+        return await fetchNewsSignals(input);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "unknown error";
+        return `News fetch failed for ${input.companyName}: ${message}`;
+      }
+    })();
 
     const profile = await runProfileExtraction({
       companyName: input.companyName,
@@ -58,11 +66,8 @@ export async function enrichCompany(input: CompanyInput): Promise<PipelineResult
       websiteContext
     });
 
-    // Preserve retrieved news signals directly so model phrasing does not drop real articles.
-    const resolvedNewsSummary =
-      newsSignals && !newsSignals.startsWith("News signals unavailable")
-        ? newsSignals
-        : insights.recentNewsSummary;
+    // Use direct news pipeline output as source of truth (article line or explicit failure reason).
+    const resolvedNewsSummary = newsSignals || insights.recentNewsSummary;
 
     return {
       input,
