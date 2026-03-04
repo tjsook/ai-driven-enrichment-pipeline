@@ -78,7 +78,7 @@ export default function Home() {
           </button>
         </form>
 
-        {status ? <p className="status">{status}</p> : null}
+        {!loading && status ? <p className="status">{status}</p> : null}
       </section>
     </main>
   );
