@@ -59,6 +59,24 @@ function dedupeArticles(items: NewsApiArticle[]): NewsApiArticle[] {
   return [...unique.values()];
 }
 
+function formatArticleLine(article: NewsApiArticle): string {
+  const source = article.source?.name ? ` (${article.source.name})` : "";
+  const date = article.publishedAt ? ` ${article.publishedAt.slice(0, 10)}` : "";
+  const title = safeText(article.title, "Recent company development identified");
+  const description = article.description ? ` - ${article.description}` : "";
+  return `${title}${source}${date}${description}`.trim();
+}
+
+function isNegativeNoNewsSummary(text: string): boolean {
+  const normalized = text.toLowerCase();
+  return (
+    normalized.includes("no recent news") ||
+    normalized.includes("news signals are unavailable") ||
+    normalized.includes("no news signal") ||
+    normalized.includes("news unavailable")
+  );
+}
+
 async function fetchNewsApiCandidates(apiKey: string, query: string): Promise<NewsApiArticle[]> {
   const url = new URL("https://newsapi.org/v2/everything");
   url.searchParams.set("q", query);
@@ -182,7 +200,7 @@ export async function fetchNewsSignals(input: CompanyInput): Promise<string> {
   ]);
 
   const candidates = dedupeArticles([...strictResults, ...broadResults]).filter(
-    (article) => isRecentEnough(article.publishedAt) && (article.title || article.description)
+    (article) => article.title || article.description
   );
 
   if (candidates.length === 0) {
@@ -190,20 +208,16 @@ export async function fetchNewsSignals(input: CompanyInput): Promise<string> {
   }
 
   const topCandidates = candidates.slice(0, 10);
+  const guaranteedFallback = formatArticleLine(topCandidates[0]);
 
   try {
     const ranked = await rankAndSummarizeWithGpt(input, topCandidates);
     const selected = topCandidates[ranked.selectedIndex] ?? topCandidates[0];
     const source = selected.source?.name ? ` (${selected.source.name})` : "";
     const date = selected.publishedAt ? ` ${selected.publishedAt.slice(0, 10)}` : "";
-
-    return `${ranked.summary}${source}${date}`.trim();
+    const summaryWithSource = `${ranked.summary}${source}${date}`.trim();
+    return isNegativeNoNewsSummary(summaryWithSource) ? guaranteedFallback : summaryWithSource;
   } catch {
-    const fallback = topCandidates[0];
-    const source = fallback.source?.name ? ` (${fallback.source.name})` : "";
-    const date = fallback.publishedAt ? ` ${fallback.publishedAt.slice(0, 10)}` : "";
-    const title = safeText(fallback.title, "Recent company development identified");
-    const description = fallback.description ? ` - ${fallback.description}` : "";
-    return `${title}${source}${date}${description}`.trim();
+    return guaranteedFallback;
   }
 }
