@@ -24,7 +24,7 @@ type RankedNewsResult = {
   summary: string;
 };
 
-const MAX_NEWS_AGE_DAYS = 29;
+const MAX_NEWS_AGE_DAYS = 28;
 const MAX_CANDIDATES = 20;
 const MIN_NEWS_API_INTERVAL_MS = 1200;
 
