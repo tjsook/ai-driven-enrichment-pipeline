@@ -48,7 +48,5 @@ This is a scaffold with provider placeholders. The end-to-end wiring is in place
 - CSV parse/write: `/src/lib/csv/*`
 - Email send: `/src/lib/email/sendEnrichedCsvEmail.ts`
 
-## Next Implementation Steps
-1. Add retries/backoff around provider calls for production reliability.
-2. Add tests for CSV parsing and pipeline mapping.
-3. Move processing to a background queue for larger CSVs.
+## Visit:
+https://ai-driven-enrichment-pipeline.vercel.app/
