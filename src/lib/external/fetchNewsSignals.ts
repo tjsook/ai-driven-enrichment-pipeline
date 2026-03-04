@@ -60,20 +60,6 @@ function safeText(value: string | undefined, fallback = "N/A"): string {
   return text && text.length > 0 ? text : fallback;
 }
 
-function isRecentEnough(publishedAt?: string): boolean {
-  if (!publishedAt) {
-    return false;
-  }
-
-  const published = new Date(publishedAt);
-  if (Number.isNaN(published.getTime())) {
-    return false;
-  }
-
-  const ageMs = Date.now() - published.getTime();
-  return ageMs <= MAX_NEWS_AGE_DAYS * 24 * 60 * 60 * 1000;
-}
-
 function dedupeArticles(items: NewsApiArticle[]): NewsApiArticle[] {
   const unique = new Map<string, NewsApiArticle>();
 
