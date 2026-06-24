@@ -47,6 +47,3 @@ This is a scaffold with provider placeholders. The end-to-end wiring is in place
 - Pipeline orchestration: `/src/lib/enrichment/*`
 - CSV parse/write: `/src/lib/csv/*`
 - Email send: `/src/lib/email/sendEnrichedCsvEmail.ts`
-
-## Visit:
-https://ai-driven-enrichment-pipeline.vercel.app/
