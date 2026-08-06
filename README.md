@@ -1,6 +1,5 @@
 # AI-Driven Lead Enrichment Pipeline
 
-Minimal skeleton for the take-home assignment workflow:
 - Upload CSV
 - Enter recipient email
 - Enrich each company using website + external sources + multi-step AI
